@@ -1,108 +1,94 @@
 using System;
 
-class ConfigSistema
+class CentralDeParametros
 {
-    private static ConfigSistema instancia;
-    public string nomeAplicacao;
-    public string servidorEnvio;
-    public int maxTentativas;
-    public string versaoSistema;
-    private ConfigSistema() { }
+    private static CentralDeParametros instanciaUnica;
+    public string nomeDoProjeto;
+    public string hostDeDisparo;
+    public int limiteDeReenvio;
+    public string buildAtual;
+    private CentralDeParametros() { }
 
-    public static ConfigSistema GetConfig()
-    {
-        if (instancia == null)
-        {
-            instancia = new ConfigSistema();
+    public static CentralDeParametros PegarParametros() {
+        if (instanciaUnica == null) {
+            instanciaUnica = new CentralDeParametros();
         }
 
-        return instancia;
+        return instanciaUnica;
     }
 }
 
-class Notificacao
-{
-    public virtual void Enviar(string mensagem)
-    {
-        Console.WriteLine("Enviando notificacao: " + mensagem);
+class AlertaBase {
+    public virtual void Disparar(string conteudo) {
+        Console.WriteLine("Disparo generico de alerta -> " + conteudo);
     }
 }
 
-class Email : Notificacao
-{
-    public override void Enviar(string mensagem)
-    {
-        Console.WriteLine("Email enviado: " + mensagem);
+class AlertaCorreio : AlertaBase {
+    public override void Disparar(string conteudo) {
+        Console.WriteLine("Correio eletronico enviado: " + conteudo);
     }
 }
 
-class SMS : Notificacao
-{
-    public override void Enviar(string mensagem)
-    {
-        Console.WriteLine("SMS enviado -> " + mensagem);
+class AlertaTexto : AlertaBase {
+    public override void Disparar(string conteudo) {
+        Console.WriteLine("Mensagem de celular enviada >> " + conteudo);
     }
 }
 
-class Push : Notificacao
-{
-    public override void Enviar(string mensagem)
-    {
-        Console.WriteLine("Push notification enviada: " + mensagem);
+class AlertaApp : AlertaBase {
+    public override void Disparar(string conteudo) {
+        Console.WriteLine("Aviso push no aplicativo: " + conteudo);
     }
 }
 
-class FabricaNotificacao
-{
-    public static Notificacao CriarNotificacao(string tipo)
-    {
-        if (tipo == "email")
-        {
-            return new Email();
+class MontadorDeAlertas {
+    public static AlertaBase GerarAlerta(string canal) {
+        canal = canal.ToLower();
+
+        if (canal == "correio") {
+            return new AlertaCorreio();
         }
-        else if (tipo == "sms")
-        {
-        return new SMS();
+        if (canal == "celular") {
+            return new AlertaTexto();
         }
-        else if (tipo == "push")
-        {
-            return new Push();
+        if (canal == "app") {
+            return new AlertaApp();
         }
-        else
-        {
-            Console.WriteLine("Tipo de notificacao nao reconhecido, usando padrao");
-            return new Notificacao();
-        }
+
+        Console.WriteLine("Canal desconhecido, criando alerta generico......");
+        return new AlertaBase();
     }
 }
 
-class Program
-{
-    static void Main()
-    {
-        ConfigSistema config = ConfigSistema.GetConfig();
+class Program {
+    static void Main(string[] args) {
+        var parametros = CentralDeParametros.PegarParametros();
 
-        config.nomeAplicacao = "Sistema de notificacoes";
-        config.servidorEnvio = "server.empresa.com";
-        config.maxTentativas = 3;
+        parametros.nomeDoProjeto = "Central de avisos internos";
+        parametros.hostDeDisparo = "teste.interno.local";
+        parametros.limiteDeReenvio = 3;
+        parametros.buildAtual = "0.9-beta-alpha-tester";
 
-        Console.WriteLine("Sistema iniciado: " + config.nomeAplicacao);
-        Console.WriteLine("Servidor: " + config.servidorEnvio);
-        Console.WriteLine("Tentativas maximas: " + config.maxTentativas);
+        Console.WriteLine("Inicializando rotina de avisos...");
+        Console.WriteLine("Projeto: " + parametros.nomeDoProjeto);
+        Console.WriteLine("Gateway configurado: " + parametros.hostDeDisparo);
         Console.WriteLine();
 
-        Notificacao n1 = FabricaNotificacao.CriarNotificacao("email");
-        n1.Enviar("Bem vindo ao sistema");
+        var alerta1 = MontadorDeAlertas.GerarAlerta("correio");
+        alerta1.Disparar("Seu cadastro foi atualizado com sucesso");
 
-        Notificacao n2 = FabricaNotificacao.CriarNotificacao("sms");
-        n2.Enviar("Seu codigo eh 1234");
+        var alerta2 = MontadorDeAlertas.GerarAlerta("celular");
+        alerta2.Disparar("Token temporario: 8841");
 
-        Notificacao n3 = FabricaNotificacao.CriarNotificacao("push");
-        n3.Enviar("Voce recebeu uma nova mensagem");
+        var alerta3 = MontadorDeAlertas.GerarAlerta("app");
+        alerta3.Disparar("Existe uma nova atividade pendente");
 
-        Notificacao teste = FabricaNotificacao.CriarNotificacao("outro");
-        teste.Enviar("teste de notificacao");
+        var alertaTeste = MontadorDeAlertas.GerarAlerta("desconhecido");
+        alertaTeste.Disparar("mensagem de teste do sistema");
 
+        Console.WriteLine();
+        Console.WriteLine("Rotina finalizada.");
         Console.ReadLine();
     }
 }
