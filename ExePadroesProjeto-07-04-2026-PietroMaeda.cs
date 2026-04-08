@@ -1,7 +1,6 @@
 using System;
 
-class CentralDeParametros
-{
+class CentralDeParametros {
     private static CentralDeParametros instanciaUnica;
     public string nomeDoProjeto;
     public string hostDeDisparo;
@@ -26,7 +25,7 @@ class AlertaBase {
 
 class AlertaCorreio : AlertaBase {
     public override void Disparar(string conteudo) {
-        Console.WriteLine("Correio eletronico enviado: " + conteudo);
+        Console.WriteLine("Email enviado: " + conteudo);
     }
 }
 
@@ -56,7 +55,7 @@ class MontadorDeAlertas {
             return new AlertaApp();
         }
 
-        Console.WriteLine("Canal desconhecido, criando alerta generico......");
+        Console.WriteLine("Canal desconhecido, criando alerta......");
         return new AlertaBase();
     }
 }
@@ -68,7 +67,7 @@ class Program {
         parametros.nomeDoProjeto = "Central de avisos internos";
         parametros.hostDeDisparo = "teste.interno.local";
         parametros.limiteDeReenvio = 3;
-        parametros.buildAtual = "0.9-beta-alpha-tester";
+        parametros.buildAtual = "beta-alpha-tester";
 
         Console.WriteLine("Inicializando rotina de avisos...");
         Console.WriteLine("Projeto: " + parametros.nomeDoProjeto);
