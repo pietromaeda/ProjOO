@@ -28,15 +28,27 @@ class AlertaCorreio : AlertaBase {
     }
 }
 
-class AlertaTexto : AlertaBase {
-    public override void Disparar(string conteudo) {
-        Console.WriteLine("Mensagem de celular enviada >> " + conteudo);
-    }
-}
-
 class AlertaApp : AlertaBase {
     public override void Disparar(string conteudo) {
         Console.WriteLine("Aviso push no aplicativo: " + conteudo);
+    }
+}
+
+class ServicoSmsLegado {
+    public void EnviarSMSExterno(string numeroDestino, string texto, int prioridade) {
+        Console.WriteLine("API LEGADA -> SMS enviado para " 
+            + numeroDestino + 
+            " | Prioridade: " + prioridade + 
+            " | Msg: " + texto);
+    }
+}
+
+class AdaptadorSmsLegado : AlertaBase {
+    private ServicoSmsLegado servico = new ServicoSmsLegado();
+    private string numeroPadrao = "11 12345-6789";
+
+    public override void Disparar(string conteudo) {
+        servico.EnviarSMSExterno(numeroPadrao, conteudo, 1);
     }
 }
 
@@ -47,9 +59,11 @@ class MontadorDeAlertas {
         if (canal == "correio") {
             return new AlertaCorreio();
         }
+
         if (canal == "celular") {
-            return new AlertaTexto();
+            return new AdaptadorSmsLegado();
         }
+
         if (canal == "app") {
             return new AlertaApp();
         }
@@ -61,6 +75,7 @@ class MontadorDeAlertas {
 
 class Program {
     static void Main(string[] args) {
+
         var parametros = CentralDeParametros.PegarParametros();
 
         parametros.nomeDoProjeto = "Central de avisos internos";
@@ -81,9 +96,6 @@ class Program {
 
         var alerta3 = MontadorDeAlertas.GerarAlerta("app");
         alerta3.Disparar("Existe uma nova atividade pendente");
-
-        var alertaTeste = MontadorDeAlertas.GerarAlerta("desconhecido");
-        alertaTeste.Disparar("mensagem de teste do sistema");
 
         Console.WriteLine();
         Console.WriteLine("Rotina finalizada.");
