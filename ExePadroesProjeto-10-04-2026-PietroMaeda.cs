@@ -12,7 +12,6 @@ class CentralDeParametros {
         if (instanciaUnica == null) {
             instanciaUnica = new CentralDeParametros();
         }
-
         return instanciaUnica;
     }
 }
