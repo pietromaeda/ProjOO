@@ -36,10 +36,10 @@ class AlertaApp : AlertaBase {
 
 class ServicoSmsLegado {
     public void EnviarSMSExterno(string numeroDestino, string texto, int prioridade) {
-        Console.WriteLine("API LEGADA -> SMS enviado para " 
-            + numeroDestino + 
-            " | Prioridade: " + prioridade + 
-            " | Msg: " + texto);
+        Console.WriteLine("API LEGADA -> SMS enviado para "
+            + numeroDestino +
+            " | prioridade: " + prioridade +
+            " | msg: " + texto);
     }
 }
 
@@ -52,24 +52,53 @@ class AdaptadorSmsLegado : AlertaBase {
     }
 }
 
+class ProxyAlerta : AlertaBase {
+
+    private AlertaBase alertaReal;
+    private int tentativas = 0;
+
+    public ProxyAlerta(AlertaBase alerta) {
+        alertaReal = alerta;
+    }
+
+    public override void Disparar(string conteudo) {
+
+        var config = CentralDeParametros.PegarParametros();
+
+        Console.WriteLine("[LOGGERR] tentativa de envio registrada");
+
+        if (tentativas >= config.limiteDeReenvio) {
+            Console.WriteLine("[BLOQUEADO!!] limite de tentativas atingido");
+            return;
+        }
+
+        tentativas++;
+
+        Console.WriteLine("[LOGGERR] enviando alerta...");
+        alertaReal.Disparar(conteudo);
+    }
+}
+
 class MontadorDeAlertas {
     public static AlertaBase GerarAlerta(string canal) {
+
         canal = canal.ToLower();
+        AlertaBase alerta;
 
         if (canal == "correio") {
-            return new AlertaCorreio();
+            alerta = new AlertaCorreio();
         }
-
-        if (canal == "celular") {
-            return new AdaptadorSmsLegado();
+        else if (canal == "celular") {
+            alerta = new AdaptadorSmsLegado();
         }
-
-        if (canal == "app") {
-            return new AlertaApp();
+        else if (canal == "app") {
+            alerta = new AlertaApp();
         }
-
-        Console.WriteLine("Canal desconhecido, criando alerta......");
-        return new AlertaBase();
+        else {
+            Console.WriteLine("Canal desconhecido, criando alerta generico");
+            alerta = new AlertaBase();
+        }
+        return new ProxyAlerta(alerta);
     }
 }
 
@@ -80,7 +109,7 @@ class Program {
 
         parametros.nomeDoProjeto = "Central de avisos internos";
         parametros.hostDeDisparo = "teste.interno.local";
-        parametros.limiteDeReenvio = 3;
+        parametros.limiteDeReenvio = 2;
         parametros.buildAtual = "beta-alpha-tester";
 
         Console.WriteLine("Inicializando rotina de avisos...");
@@ -89,13 +118,10 @@ class Program {
         Console.WriteLine();
 
         var alerta1 = MontadorDeAlertas.GerarAlerta("correio");
-        alerta1.Disparar("Seu cadastro foi atualizado com sucesso");
 
-        var alerta2 = MontadorDeAlertas.GerarAlerta("celular");
-        alerta2.Disparar("Token temporario: 8841");
-
-        var alerta3 = MontadorDeAlertas.GerarAlerta("app");
-        alerta3.Disparar("Existe uma nova atividade pendente");
+        alerta1.Disparar("Seu cadastro foi atualizado");
+        alerta1.Disparar("Mensagem repetida");
+        alerta1.Disparar("Terceira tentativa bloqueada");
 
         Console.WriteLine();
         Console.WriteLine("Rotina finalizada.");
